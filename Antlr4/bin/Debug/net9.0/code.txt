@@ -1,0 +1,9 @@
+    declare x: i = 5;
+    declare y: f = 1.4;
+    set x = x + 13;
+
+    check (x > 5) {
+        show(y);
+    } otherwise {
+        show(0);
+    }
