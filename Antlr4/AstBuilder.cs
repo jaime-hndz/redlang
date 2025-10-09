@@ -24,11 +24,23 @@ namespace Antlr4
             if (ctx.assignment() != null) return Visit(ctx.assignment());
             if (ctx.ifStmt() != null) return Visit(ctx.ifStmt());
             if (ctx.printStmt() != null) return Visit(ctx.printStmt());
+            if (ctx.whileStmt() != null) return Visit(ctx.whileStmt());
+            if (ctx.forStmt() != null) return Visit(ctx.forStmt());
             return base.VisitStatement(ctx);
         }
 
         public override AstNode VisitDeclaration(RedLangParser.DeclarationContext ctx)
         {
+
+            var ident = ctx.IDENT();
+            var type = ctx.type();
+
+            if (ident == null)
+                throw new Exception("Error: se esperaba un identificador en la declaración.");
+
+            if (type == null)
+                throw new Exception($"Error: se esperaba un tipo para '{ident.GetText()}'.");
+
             return new DeclarationNode
             {
                 Name = ctx.IDENT().GetText(),
@@ -111,6 +123,44 @@ namespace Antlr4
                 };
             }
             return base.VisitTerm(ctx);
+        }
+
+        public override AstNode VisitWhileStmt(RedLangParser.WhileStmtContext ctx)
+        {
+            var node = new WhileNode
+            {
+                Condition = (ExpressionNode)Visit(ctx.expression())
+            };
+
+            foreach (var stmt in ctx.block().statement())
+                node.Body.Add(Visit(stmt));
+
+            return node;
+        }
+
+        public override AstNode VisitForStmt(RedLangParser.ForStmtContext ctx)
+        {
+            var node = new ForNode();
+
+            // Inicialización (declaración o asignación)
+            if (ctx.declaration() != null)
+                node.Init = Visit(ctx.declaration());
+            else if (ctx.assignment().Length > 0)
+                node.Init = Visit(ctx.assignment(0));
+
+            // Condición (opcional)
+            if (ctx.expression() != null)
+                node.Condition = (ExpressionNode)Visit(ctx.expression());
+
+            // Incremento (segunda asignación opcional)
+            if (ctx.assignment().Length >= 1)
+                node.Increment = Visit(ctx.assignment(ctx.assignment().Length - 1));
+
+            // Cuerpo
+            foreach (var stmt in ctx.block().statement())
+                node.Body.Add(Visit(stmt));
+
+            return node;
         }
     }
 }

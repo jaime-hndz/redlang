@@ -367,6 +367,71 @@ namespace Antlr4
                         break;
                     }
 
+                case WhileNode w:
+                    {
+                        var condLbl = FreshLbl("while.cond");
+                        var bodyLbl = FreshLbl("while.body");
+                        var endLbl = FreshLbl("while.end");
+
+                        // saltar al condicional
+                        sb.AppendLine($"  br label %{condLbl}");
+                        sb.AppendLine($"{condLbl}:");
+
+                        var cond = AsBool(GenExpr(w.Condition));
+                        sb.AppendLine($"  br i1 {cond.v}, label %{bodyLbl}, label %{endLbl}");
+
+                        // cuerpo
+                        sb.AppendLine($"{bodyLbl}:");
+                        foreach (var s in w.Body)
+                            GenStmt(s);
+                        sb.AppendLine($"  br label %{condLbl}");
+
+                        // fin
+                        sb.AppendLine($"{endLbl}:");
+                        break;
+                    }
+
+                case ForNode f:
+                    {
+                        var condLbl = FreshLbl("for.cond");
+                        var bodyLbl = FreshLbl("for.body");
+                        var endLbl = FreshLbl("for.end");
+
+                        // Inicialización
+                        if (f.Init != null)
+                            GenStmt(f.Init);
+
+                        // Saltar al condicional
+                        sb.AppendLine($"  br label %{condLbl}");
+                        sb.AppendLine($"{condLbl}:");
+
+                        // Condición
+                        string condValue;
+                        if (f.Condition != null)
+                        {
+                            var cond = AsBool(GenExpr(f.Condition));
+                            condValue = cond.v;
+                        }
+                        else condValue = "true";
+
+                        sb.AppendLine($"  br i1 {condValue}, label %{bodyLbl}, label %{endLbl}");
+
+                        // Cuerpo
+                        sb.AppendLine($"{bodyLbl}:");
+                        foreach (var s in f.Body)
+                            GenStmt(s);
+
+                        // 🔧 Incremento después del cuerpo
+                        if (f.Increment != null)
+                            GenStmt(f.Increment);
+
+                        // Regresar a la condición
+                        sb.AppendLine($"  br label %{condLbl}");
+
+                        // Fin
+                        sb.AppendLine($"{endLbl}:");
+                        break;
+                    }
                 default:
                     throw new Exception($"Statement no soportado: {node.GetType().Name}");
             }

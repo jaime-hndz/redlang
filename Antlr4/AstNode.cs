@@ -62,4 +62,20 @@ namespace Antlr4
         public ExpressionNode Left { get; set; }
         public ExpressionNode Right { get; set; }
     }
+
+    // Bucle tipo while (repeat)
+    public class WhileNode : AstNode
+    {
+        public ExpressionNode Condition { get; set; }
+        public List<AstNode> Body { get; set; } = new List<AstNode>();
+    }
+
+    // Bucle tipo for (loop)
+    public class ForNode : AstNode
+    {
+        public AstNode Init { get; set; }              // puede ser DeclarationNode o AssignmentNode
+        public ExpressionNode Condition { get; set; }  // puede ser null
+        public AstNode Increment { get; set; }         // puede ser null
+        public List<AstNode> Body { get; set; } = new List<AstNode>();
+    }
 }

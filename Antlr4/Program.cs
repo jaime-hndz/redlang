@@ -86,6 +86,36 @@ class Program
                 PrintAst(print.Value, indent + "  ");
                 break;
 
+            case WhileNode w:
+                Console.WriteLine($"{indent}Repeat (while)");
+                Console.WriteLine(indent + "  Condition:");
+                PrintAst(w.Condition, indent + "    ");
+                Console.WriteLine(indent + "  Body:");
+                foreach (var stmt in w.Body)
+                    PrintAst(stmt, indent + "    ");
+                break;
+
+            case ForNode f:
+                Console.WriteLine($"{indent}Loop (for)");
+                if (f.Init != null)
+                {
+                    Console.WriteLine(indent + "  Init:");
+                    PrintAst(f.Init, indent + "    ");
+                }
+                if (f.Condition != null)
+                {
+                    Console.WriteLine(indent + "  Condition:");
+                    PrintAst(f.Condition, indent + "    ");
+                }
+                if (f.Increment != null)
+                {
+                    Console.WriteLine(indent + "  Increment:");
+                    PrintAst(f.Increment, indent + "    ");
+                }
+                Console.WriteLine(indent + "  Body:");
+                foreach (var stmt in f.Body)
+                    PrintAst(stmt, indent + "    ");
+                break;
             case BinaryOpNode bin:
                 Console.WriteLine($"{indent}BinaryOp {bin.Op}");
                 PrintAst(bin.Left, indent + "  ");

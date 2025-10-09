@@ -1,9 +1,19 @@
-    declare x: i = 5;
-    declare y: f = 1.4;
-    set x = x + 13;
+declare x: i = 5;
+declare y: f;
+set x = x + 1;
 
-    check (x > 5) {
-        show(y);
-    } otherwise {
-        show(0);
-    }
+check (x > 5) {
+    show(x);
+} otherwise {
+    show(0);
+}
+
+
+repeat (x < 10) {
+    show(x);
+    set x = x + 1;
+}
+
+loop (declare a: i = 0; a < 2; set a = a + 1;) {
+    show(a);
+}
