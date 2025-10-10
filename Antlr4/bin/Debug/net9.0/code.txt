@@ -1,5 +1,0 @@
-
-
-declare j: i;
-ask(j);
-show(j);
