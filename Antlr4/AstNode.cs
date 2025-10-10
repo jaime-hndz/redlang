@@ -78,4 +78,9 @@ namespace Antlr4
         public AstNode Increment { get; set; }         // puede ser null
         public List<AstNode> Body { get; set; } = new List<AstNode>();
     }
+
+    public class ReadNode : AstNode
+    {
+        public string Name { get; set; }   // variable donde se almacena la entrada
+    }
 }

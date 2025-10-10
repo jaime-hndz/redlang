@@ -17,3 +17,7 @@ repeat (x < 10) {
 loop (declare a: i = 0; a < 2; set a = a + 1;) {
     show(a);
 }
+
+declare j: i;
+ask(j);
+show(j);

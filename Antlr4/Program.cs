@@ -116,6 +116,11 @@ class Program
                 foreach (var stmt in f.Body)
                     PrintAst(stmt, indent + "    ");
                 break;
+
+            case ReadNode read:
+                Console.WriteLine($"{indent}Ask input for variable {read.Name}");
+                break;
+
             case BinaryOpNode bin:
                 Console.WriteLine($"{indent}BinaryOp {bin.Op}");
                 PrintAst(bin.Left, indent + "  ");

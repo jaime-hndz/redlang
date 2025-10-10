@@ -24,6 +24,7 @@ namespace Antlr4
             if (ctx.assignment() != null) return Visit(ctx.assignment());
             if (ctx.ifStmt() != null) return Visit(ctx.ifStmt());
             if (ctx.printStmt() != null) return Visit(ctx.printStmt());
+            if (ctx.readStmt() != null) return Visit(ctx.readStmt());
             if (ctx.whileStmt() != null) return Visit(ctx.whileStmt());
             if (ctx.forStmt() != null) return Visit(ctx.forStmt());
             return base.VisitStatement(ctx);
@@ -162,5 +163,14 @@ namespace Antlr4
 
             return node;
         }
+
+        public override AstNode VisitReadStmt(RedLangParser.ReadStmtContext ctx)
+        {
+            return new ReadNode
+            {
+                Name = ctx.IDENT().GetText()
+            };
+        }
+
     }
 }

@@ -27,11 +27,20 @@ namespace Antlr4
             if (prologueEmitted) return;
             prologueEmitted = true;
 
-            // Formatos para printf
+            // 🔹 Formatos globales para impresión y lectura
             sb.AppendLine("@.fmt_i = private unnamed_addr constant [4 x i8] c\"%d\\0A\\00\"");
             sb.AppendLine("@.fmt_f = private unnamed_addr constant [4 x i8] c\"%f\\0A\\00\"");
-            sb.AppendLine("declare i32 @printf(i8*, ...)");
+            sb.AppendLine("@.fmt_i_in = private unnamed_addr constant [3 x i8] c\"%d\\00\"");
+            sb.AppendLine("@.fmt_f_in = private unnamed_addr constant [3 x i8] c\"%f\\00\"");
             sb.AppendLine();
+
+            // 🔹 Declaraciones de funciones externas
+            sb.AppendLine("declare i32 @printf(i8*, ...)");
+            sb.AppendLine("declare i32 @scanf(i8*, ...)");
+            sb.AppendLine("declare i32 @fflush(i8*)"); // opcional, útil si luego agregas flush automático
+            sb.AppendLine();
+
+            // 🔹 Función principal
             sb.AppendLine("define i32 @main() {");
             sb.AppendLine("entry:");
         }
@@ -373,20 +382,17 @@ namespace Antlr4
                         var bodyLbl = FreshLbl("while.body");
                         var endLbl = FreshLbl("while.end");
 
-                        // saltar al condicional
                         sb.AppendLine($"  br label %{condLbl}");
                         sb.AppendLine($"{condLbl}:");
 
                         var cond = AsBool(GenExpr(w.Condition));
                         sb.AppendLine($"  br i1 {cond.v}, label %{bodyLbl}, label %{endLbl}");
 
-                        // cuerpo
                         sb.AppendLine($"{bodyLbl}:");
                         foreach (var s in w.Body)
                             GenStmt(s);
                         sb.AppendLine($"  br label %{condLbl}");
 
-                        // fin
                         sb.AppendLine($"{endLbl}:");
                         break;
                     }
@@ -397,15 +403,12 @@ namespace Antlr4
                         var bodyLbl = FreshLbl("for.body");
                         var endLbl = FreshLbl("for.end");
 
-                        // Inicialización
                         if (f.Init != null)
                             GenStmt(f.Init);
 
-                        // Saltar al condicional
                         sb.AppendLine($"  br label %{condLbl}");
                         sb.AppendLine($"{condLbl}:");
 
-                        // Condición
                         string condValue;
                         if (f.Condition != null)
                         {
@@ -416,20 +419,33 @@ namespace Antlr4
 
                         sb.AppendLine($"  br i1 {condValue}, label %{bodyLbl}, label %{endLbl}");
 
-                        // Cuerpo
                         sb.AppendLine($"{bodyLbl}:");
                         foreach (var s in f.Body)
                             GenStmt(s);
 
-                        // 🔧 Incremento después del cuerpo
                         if (f.Increment != null)
                             GenStmt(f.Increment);
 
-                        // Regresar a la condición
                         sb.AppendLine($"  br label %{condLbl}");
 
-                        // Fin
                         sb.AppendLine($"{endLbl}:");
+                        break;
+                    }
+                case ReadNode r:
+                    {
+                        var (slot, ty) = Lookup(r.Name);
+                        var fmt = Fresh();
+
+                        if (ty == Ty.Int)
+                        {
+                            sb.AppendLine($"  {fmt} = getelementptr [3 x i8], [3 x i8]* @.fmt_i_in, i32 0, i32 0");
+                            sb.AppendLine($"  call i32 (i8*, ...) @scanf(i8* {fmt}, {LlvmTy(ty)}* {slot})");
+                        }
+                        else if (ty == Ty.Double)
+                        {
+                            sb.AppendLine($"  {fmt} = getelementptr [3 x i8], [3 x i8]* @.fmt_f_in, i32 0, i32 0");
+                            sb.AppendLine($"  call i32 (i8*, ...) @scanf(i8* {fmt}, {LlvmTy(ty)}* {slot})");
+                        }
                         break;
                     }
                 default:

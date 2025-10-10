@@ -16,3 +16,4 @@ C:\Users\Jaime\source\repos\Antlr4\Antlr4\obj\Debug\net9.0\Antlr4.pdb
 C:\Users\Jaime\source\repos\Antlr4\Antlr4\obj\Debug\net9.0\Antlr4.genruntimeconfig.cache
 C:\Users\Jaime\source\repos\Antlr4\Antlr4\obj\Debug\net9.0\ref\Antlr4.dll
 C:\Users\Jaime\source\repos\Antlr4\Antlr4\bin\Debug\net9.0\code.txt
+C:\Users\Jaime\source\repos\Antlr4\Antlr4\obj\Debug\net9.0\Antlr4.sourcelink.json
