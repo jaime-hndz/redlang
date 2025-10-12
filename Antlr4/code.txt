@@ -21,3 +21,12 @@ loop (declare a: i = 0; a < 2; set a = a + 1;) {
 declare j: i;
 ask(j);
 show(j);
+
+
+
+func suma(l: i, p: i): i {
+    give l + p;
+}
+
+declare u: i = suma(2, 3);
+show(u);

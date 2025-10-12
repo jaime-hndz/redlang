@@ -5,13 +5,15 @@ using System.Text;
 
 namespace Antlr4
 {
-    public enum Ty { Int, Double, Bool } // i32, double, i1
+    public enum Ty { Int, Double, Bool, Void, String } // i32, double, i1
 
     public class CodeGen
     {
         private readonly StringBuilder sb = new StringBuilder();
         private int tmp = 0;
         private int lbl = 0;
+        private Dictionary<string, (string slot, Ty ty)> locals = new();
+        private Dictionary<string, FunctionNode> functions = new();
 
         private string Fresh() => "%t" + (tmp++);
         private string FreshLbl(string baseName) => $"{baseName}{lbl++}";
@@ -76,19 +78,19 @@ namespace Antlr4
         // === Carga/almacenamiento de variables ===
         private (string alloca, Ty ty) EnsureLocal(string name, Ty declType)
         {
-            if (!sym.ContainsKey(name))
+            if (!locals.ContainsKey(name))
             {
                 var slot = Fresh();
-                sym[name] = (slot, declType);
+                locals[name] = (slot, declType);
                 var llty = LlvmTy(declType);
                 sb.AppendLine($"  {slot} = alloca {llty}");
             }
-            return sym[name];
+            return locals[name];
         }
 
         private (string alloca, Ty ty) Lookup(string name)
         {
-            if (!sym.TryGetValue(name, out var info))
+            if (!locals.TryGetValue(name, out var info))
                 throw new Exception($"Variable no declarada: {name}");
             return info;
         }
@@ -162,6 +164,22 @@ namespace Antlr4
             {
                 case LiteralNode lit:
                     return ParseLiteral(lit.Value);
+
+                case CallNode call:
+                    {
+                        if (!functions.TryGetValue(call.Name, out var fn))
+                            throw new Exception($"Función no declarada: {call.Name}");
+
+                        var args = call.Arguments.Select(GenExpr).ToList();
+                        var argText = string.Join(", ", args.Select((a, i) =>
+                            $"{LlvmTy(a.ty)} {a.v}"
+                        ));
+
+                        var retTy = ParseTypeKeyword(fn.ReturnType);
+                        var tmp = Fresh();
+                        sb.AppendLine($"  {tmp} = call {LlvmTy(retTy)} @{call.Name}({argText})");
+                        return (tmp, retTy);
+                    }
 
                 case VariableNode var:
                     {
@@ -448,6 +466,12 @@ namespace Antlr4
                         }
                         break;
                     }
+                case ReturnNode r:
+                    {
+                        var val = GenExpr(r.Value);
+                        sb.AppendLine($"  ret {LlvmTy(val.ty)} {val.v}");
+                        break;
+                    }
                 default:
                     throw new Exception($"Statement no soportado: {node.GetType().Name}");
             }
@@ -455,9 +479,67 @@ namespace Antlr4
 
         public void GenProgram(ProgramNode prog)
         {
-            EmitPrologue();
-            foreach (var s in prog.Statements) GenStmt(s);
-            EmitEpilogue();
+            // 1️⃣ Registrar funciones
+            foreach (var stmt in prog.Statements)
+                if (stmt is FunctionNode fn)
+                    functions[fn.Name] = fn;
+
+            // 2️⃣ Generar funciones primero (fuera del main)
+            foreach (var fn in functions.Values)
+                GenFunction(fn);
+
+            // 3️⃣ Ahora generar el main
+            EmitPrologue(); // ← define @main
+
+            foreach (var stmt in prog.Statements)
+            {
+                if (stmt is not FunctionNode)
+                    GenStmt(stmt);
+            }
+
+            sb.AppendLine("  ret i32 0");
+            sb.AppendLine("}");
+        }
+
+        public void GenFunction(FunctionNode fn)
+        {
+            var retTy = ParseTypeKeyword(fn.ReturnType);
+            var paramList = string.Join(", ",
+                fn.Parameters.Select(p => $"{LlvmTy(ParseTypeKeyword(p.type))} %{p.name}")
+            );
+
+            sb.AppendLine($"define {LlvmTy(retTy)} @{fn.Name}({paramList}) {{");
+            sb.AppendLine("entry:");
+
+            // 🔹 Guardamos el scope anterior
+            var oldLocals = locals;
+            locals = new Dictionary<string, (string slot, Ty ty)>();
+
+            // 🔹 Declarar espacio local para cada parámetro
+            foreach (var (name, typeStr) in fn.Parameters)
+            {
+                var ty = ParseTypeKeyword(typeStr);
+                var slot = Fresh();
+                sb.AppendLine($"  {slot} = alloca {LlvmTy(ty)}");
+                sb.AppendLine($"  store {LlvmTy(ty)} %{name}, {LlvmTy(ty)}* {slot}");
+
+                // 👇 Aquí registramos el parámetro en la tabla de símbolos locales
+                locals[name] = (slot, ty);
+            }
+
+            // 🔹 Generar cuerpo
+            foreach (var stmt in fn.Body)
+                GenStmt(stmt);
+
+            // 🔹 Si no hay return explícito
+            if (retTy == Ty.Void)
+                sb.AppendLine("  ret void");
+
+            sb.AppendLine("}");
+            sb.AppendLine();
+
+            // 🔹 Restaurar el scope anterior
+            locals = oldLocals;
         }
 
         public void Save(string path) => File.WriteAllText(path, sb.ToString());

@@ -12,6 +12,9 @@ namespace Antlr4
         {
             var program = new ProgramNode();
 
+            foreach (var func in ctx.functionDecl())
+                program.Statements.Add(Visit(func));
+
             foreach (var stmt in ctx.statement())
                 program.Statements.Add(Visit(stmt));
 
@@ -172,5 +175,50 @@ namespace Antlr4
             };
         }
 
+        public override AstNode VisitFunctionDecl(RedLangParser.FunctionDeclContext ctx)
+        {
+            var fn = new FunctionNode
+            {
+                Name = ctx.IDENT().GetText(),
+                ReturnType = ctx.type().GetText()
+            };
+
+            if (ctx.parameters() != null)
+            {
+                fn.Parameters = new List<(string name, string type)>();
+
+                foreach (var p in ctx.parameters().param())
+                {
+                    if (p.IDENT() == null || p.type() == null)
+                        throw new Exception("Error en parámetro: falta nombre o tipo.");
+
+                    fn.Parameters.Add((p.IDENT().GetText(), p.type().GetText()));
+                }
+            }
+
+            foreach (var stmt in ctx.block().statement())
+                fn.Body.Add(Visit(stmt));
+
+            return fn;
+        }
+
+        public override AstNode VisitCallExpr(RedLangParser.CallExprContext ctx)
+        {
+            return new CallNode
+            {
+                Name = ctx.IDENT().GetText(),
+                Arguments = ctx.arguments()?.expression()
+                    .Select(e => (ExpressionNode)Visit(e))
+                    .ToList() ?? new()
+            };
+        }
+
+        public override AstNode VisitReturnStmt(RedLangParser.ReturnStmtContext ctx)
+        {
+            return new ReturnNode
+            {
+                Value = (ExpressionNode)Visit(ctx.expression())
+            };
+        }
     }
 }

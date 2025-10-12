@@ -121,6 +121,30 @@ class Program
                 Console.WriteLine($"{indent}Ask input for variable {read.Name}");
                 break;
 
+            case FunctionNode fn:
+                Console.WriteLine($"{indent}Function {fn.Name} -> {fn.ReturnType}");
+                if (fn.Parameters.Any())
+                {
+                    Console.WriteLine(indent + "  Params:");
+                    foreach (var (n, t) in fn.Parameters)
+                        Console.WriteLine($"{indent}    {n}: {t}");
+                }
+                Console.WriteLine(indent + "  Body:");
+                foreach (var stmt in fn.Body)
+                    PrintAst(stmt, indent + "    ");
+                break;
+
+            case CallNode call:
+                Console.WriteLine($"{indent}Call {call.Name}");
+                foreach (var arg in call.Arguments)
+                    PrintAst(arg, indent + "  ");
+                break;
+
+            case ReturnNode ret:
+                Console.WriteLine($"{indent}Return:");
+                PrintAst(ret.Value, indent + "  ");
+                break;
+
             case BinaryOpNode bin:
                 Console.WriteLine($"{indent}BinaryOp {bin.Op}");
                 PrintAst(bin.Left, indent + "  ");

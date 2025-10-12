@@ -3,7 +3,7 @@ parser grammar RedLangParser;
 options { tokenVocab=RedLangLexer; }
 
 program
-    : statement* EOF
+    : (functionDecl | statement)* EOF
     ;
 
 declaration

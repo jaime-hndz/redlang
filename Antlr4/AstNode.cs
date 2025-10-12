@@ -83,4 +83,25 @@ namespace Antlr4
     {
         public string Name { get; set; }   // variable donde se almacena la entrada
     }
+
+    public class FunctionNode : AstNode
+    {
+        public string Name { get; set; }
+        public List<(string name, string type)> Parameters { get; set; } = new();
+        public string ReturnType { get; set; }
+        public List<AstNode> Body { get; set; } = new();
+    }
+
+    // Llamada a función
+    public class CallNode : ExpressionNode
+    {
+        public string Name { get; set; }
+        public List<ExpressionNode> Arguments { get; set; } = new();
+    }
+
+    // Sentencia de retorno (give)
+    public class ReturnNode : AstNode
+    {
+        public ExpressionNode Value { get; set; }
+    }
 }
