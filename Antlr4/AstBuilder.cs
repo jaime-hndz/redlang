@@ -115,7 +115,7 @@ namespace Antlr4
             return base.VisitComparison(ctx);
         }
 
-        public override AstNode VisitTerm(RedLangParser.TermContext ctx)
+        public override AstNode VisitEquality(RedLangParser.EqualityContext ctx)
         {
             if (ctx.op != null)
             {
@@ -126,7 +126,45 @@ namespace Antlr4
                     Right = (ExpressionNode)Visit(ctx.right)
                 };
             }
-            return base.VisitTerm(ctx);
+            return base.VisitEquality(ctx);
+        }
+
+        public override AstNode VisitFactor(RedLangParser.FactorContext ctx)
+        {
+            AstNode node = Visit(ctx.unary(0));
+
+            for (int i = 1; i < ctx.unary().Length; i++)
+            {
+                var right = (ExpressionNode)Visit(ctx.unary(i));
+                var op = ctx.GetChild(2 * i - 1).GetText(); // operador en posiciones 1, 3, 5, ...
+                node = new BinaryOpNode
+                {
+                    Op = op,
+                    Left = (ExpressionNode)node,
+                    Right = right
+                };
+            }
+
+            return node;
+        }
+
+        public override AstNode VisitTerm(RedLangParser.TermContext ctx)
+        {
+            AstNode node = Visit(ctx.factor(0));
+
+            for (int i = 1; i < ctx.factor().Length; i++)
+            {
+                var right = (ExpressionNode)Visit(ctx.factor(i));
+                var op = ctx.GetChild(2 * i - 1).GetText(); // operador entre factores
+                node = new BinaryOpNode
+                {
+                    Op = op,
+                    Left = (ExpressionNode)node,
+                    Right = right
+                };
+            }
+
+            return node;
         }
 
         public override AstNode VisitWhileStmt(RedLangParser.WhileStmtContext ctx)

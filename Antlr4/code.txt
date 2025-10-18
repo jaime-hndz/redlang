@@ -6,7 +6,7 @@ check (x > 5) {
     show(x);
 } otherwise {
     show(0);
-}
+    }
 
 
 repeat (x < 10) {
@@ -30,3 +30,14 @@ func suma(l: i, p: i): i {
 
 declare u: i = suma(2, 3);
 show(u);
+
+
+func factorial(num: i):i{
+    check (num == 1) {
+        give num;
+    }
+
+    give num * factorial(num - 1);
+}
+
+show(factorial(5));
